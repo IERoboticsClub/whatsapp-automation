@@ -2,8 +2,7 @@ import streamlit as st
 import datetime
 from langchain.llms import Ollama
 
-# Instantiate the LLM
-llm = Ollama(model="llama2:latest") # Adjust as necessary
+llm = Ollama(model="llama2:latest")
 
 st.title('Whatsapp Automation')
 st.text('<3')
