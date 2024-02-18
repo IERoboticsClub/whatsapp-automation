@@ -12,7 +12,7 @@ log.basicConfig(filename="/tmp/automation.log", level=log.INFO)
 
 
 class Whatsapp:
-    def __init__(self, user_directory_path=None, headless=False, driver_path=None):
+    def __init__(self, user_directory_path=None, headless=False, driver_path=None, spawn=True):
         log.info("Initializing Whatsapp Instance at {}".format(time.ctime()))
         if not user_directory_path:
             user_directory_path = os.path.join(os.getcwd(),"user_data")
@@ -24,9 +24,40 @@ class Whatsapp:
             sys.exit(1)
         self.driver_path = driver_path
         self.headless = headless
-        self.driver = self.spawn_whatsapp_instance()
+        if spawn:
+            self.driver = self.spawn_whatsapp_instance()
 
 
+    def pre_seed(self):
+        """
+        Pre seed the whatsapp instance with the user directory
+        :return:
+        """
+        print("PRESEEDING WHATSAPP")
+        # open the whatsapp instance
+        options = webdriver.ChromeOptions()
+        # MODULARIZE THIS
+        options.add_argument(r"user-data-dir={}".format(self.user_directory_path))
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
+        drier_path = self.driver_path
+        os.environ["webdriver.chrome.driver"] = drier_path
+        driver = webdriver.Chrome(options=options)
+        driver.get("https://web.whatsapp.com/")
+        inp = input("Press enter after successfuly show")
+        driver.quit()
+
+
+    # de-constructor-override
+    def __del__(self):
+        """
+        Deconstructor override
+        :return:
+        """
+        print("CLOSING WHATSAPP")
+        log.info("Closing Whatsapp Instance")
+        self.display.stop()
+        self.driver.quit()
 
 
     def spawn_whatsapp_instance(self):
@@ -43,9 +74,13 @@ class Whatsapp:
         if headless:
             print("HEADLESS MODE")
             log.info("Using HEADLESS mode for whatsapp instance")
-            options.add_argument('--headless')
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-dev-shm-usage')
+            from pyvirtualdisplay import Display
+
+            # Start virtual display
+            display = Display(visible=0, size=(800, 600))
+            self.display = display
+            display.start()
+
         # MODULARIZE THIS
         drier_path = self.driver_path
         os.environ["webdriver.chrome.driver"] = drier_path
@@ -53,12 +88,24 @@ class Whatsapp:
         driver.get("https://web.whatsapp.com/")
         # wait for Loading your chats not not be in the page
         print("OPENED WHATSAPP")
-        WebDriverWait(driver, 120).until(
-            # the search bar is visiblesWebDriverWait(driver, 60).until(
-            EC.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))
-
-
-        )
+        def try_get_search_box():
+            try:
+                search_box = driver.find_element(By.XPATH,"//div[@contenteditable='true']")
+                return search_box
+            except:
+                return False
+        search_box = try_get_search_box()
+        timed = 0
+        while not search_box:
+            print("WAITING FOR SEARCH BOX")
+            search_box = try_get_search_box()
+            # print all text in the page
+            timed += 1
+            if timed > 10:
+                print("TIMEOUT")
+                log.error("Timeout waiting for search box")
+                break
+            time.sleep(4)
 
         print("LOGGED IN")
         log.info("Logged into whatsapp")
