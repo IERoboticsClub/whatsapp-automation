@@ -1,6 +1,8 @@
 import streamlit as st
 import datetime
-from langchain.llms import Ollama
+from langchain_community.llms import Ollama
+
+st.set_page_config(page_title="Whatsapp Automation", page_icon=":iphone:", layout="wide")
 
 llm = Ollama(model="llama2:latest")
 
@@ -12,6 +14,8 @@ event = form.selectbox('Select an event', ('Workshop', 'POW'), index=None)
 date = form.date_input('What day is the event?', value=None, format="DD/MM/YYYY")
 time = form.time_input('What time is the event?', value=datetime.time(0, 0))
 room = form.text_input('What is the room number?', value=None)
+model = form.selectbox('Select a model', ('llama2:latest', 'gpt-3.5-turbo'), index=None)
+# llm = Model(model)..
 
 formatted_time = time.strftime('%H:%M')
 
